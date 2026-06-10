@@ -3,4 +3,5 @@ export interface IIngredient {
   name: string;
   description: string;
   isAllergen: boolean;
+  stock: number;
 }

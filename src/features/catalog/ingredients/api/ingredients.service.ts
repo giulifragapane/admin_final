@@ -1,13 +1,14 @@
 import { api } from "@/shared/api/client";
 import type { IIngredient } from "@/features/catalog/ingredients/types/IIngredient";
 
-const BASE_URL = "/ingredientes";
+const BASE_URL = "/ingredientes/";
 
 type IngredientApi = {
   id: number;
   nombre: string;
   descripcion: string;
   es_alergeno: boolean;
+  stock_cantidad: number;
 };
 
 type IngredientsApiResponse = {
@@ -15,17 +16,21 @@ type IngredientsApiResponse = {
   total: number;
 };
 
+export type IngredientPayload = Omit<IIngredient, "id">;
+
 const mapIngredientFromApi = (ingredient: IngredientApi): IIngredient => ({
   id: String(ingredient.id),
   name: ingredient.nombre,
   description: ingredient.descripcion,
   isAllergen: ingredient.es_alergeno,
+  stock: ingredient.stock_cantidad,
 });
 
-const mapIngredientToApi = (ingredient: Omit<IIngredient, "id">) => ({
+const mapIngredientToApi = (ingredient: IngredientPayload) => ({
   nombre: ingredient.name,
   descripcion: ingredient.description,
   es_alergeno: ingredient.isAllergen,
+  stock_cantidad: ingredient.stock,
 });
 
 export const getIngredients = async (): Promise<IIngredient[]> => {
@@ -34,7 +39,7 @@ export const getIngredients = async (): Promise<IIngredient[]> => {
 };
 
 export const createIngredient = async (
-  newIngredient: Omit<IIngredient, "id">,
+  newIngredient: IngredientPayload,
 ): Promise<IIngredient> => {
   const response = await api.post<IngredientApi>(
     BASE_URL,
@@ -46,10 +51,10 @@ export const createIngredient = async (
 
 export const updateIngredient = async (
   id: string,
-  ingredient: Omit<IIngredient, "id">,
+  ingredient: IngredientPayload,
 ): Promise<IIngredient> => {
   const response = await api.patch<IngredientApi>(
-    `${BASE_URL}/${id}`,
+    `${BASE_URL}${id}`,
     mapIngredientToApi(ingredient),
   );
 
@@ -57,5 +62,5 @@ export const updateIngredient = async (
 };
 
 export const deleteIngredient = async (id: string): Promise<void> => {
-  await api.delete(`${BASE_URL}/${id}`);
+  await api.delete(`${BASE_URL}${id}`);
 };

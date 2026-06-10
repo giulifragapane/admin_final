@@ -86,6 +86,7 @@ export const IngredientsPage = () => {
                 <th className="px-4 py-3 text-left font-medium">
                   Descripción
                 </th>
+                <th className="px-4 py-3 text-center font-medium">Stock</th>
                 <th className="px-4 py-3 text-center font-medium">
                   Es alérgeno
                 </th>
@@ -107,6 +108,10 @@ export const IngredientsPage = () => {
 
                   <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                     {ingredient.description || "—"}
+                  </td>
+
+                  <td className="px-4 py-3 text-center text-gray-700">
+                    {ingredient.stock}
                   </td>
 
                   <td className="px-4 py-3 text-center">
