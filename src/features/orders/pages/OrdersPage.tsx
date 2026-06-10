@@ -6,7 +6,6 @@ const orderStatuses: OrderStatus[] = [
   "PENDIENTE",
   "CONFIRMADO",
   "EN_PREP",
-  "EN_CAMINO",
   "ENTREGADO",
   "CANCELADO",
 ];
@@ -15,7 +14,6 @@ const statusLabels: Record<OrderStatus, string> = {
   PENDIENTE: "Pendiente",
   CONFIRMADO: "Confirmado",
   EN_PREP: "En preparación",
-  EN_CAMINO: "En camino",
   ENTREGADO: "Entregado",
   CANCELADO: "Cancelado",
 };
