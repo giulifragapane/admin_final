@@ -12,7 +12,7 @@ import type {
 import type { UserRole } from "@/features/auth/types/IUser";
 import { useAdminUsers } from "@/features/admin-users/hooks/useAdminUsers";
 
-const roleOptions: UserRole[] = ["ADMIN", "STOCK", "PEDIDOS", "CLIENT"];
+const roleOptions: UserRole[] = ["STOCK", "PEDIDOS"];
 
 export const AdminUsersPage = () => {
   const [userToEdit, setUserToEdit] = useState<IAdminUser | null>(null);
@@ -27,6 +27,10 @@ export const AdminUsersPage = () => {
   });
   const [error, setError] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<UserRole | "ALL">("ALL");
+  const isAdminUser = (user: IAdminUser) => {
+    return user.roles.some((role) => role.rol_codigo === "ADMIN");
+  };
+  
 
   const handleCloseEdit = () => {
     setUserToEdit(null);
@@ -50,6 +54,11 @@ export const AdminUsersPage = () => {
   });
 
   const handleOpenEdit = (user: IAdminUser) => {
+    if (isAdminUser(user)) {
+      setError("No se pueden editar usuarios ADMIN desde esta pantalla.");
+      return;
+    }
+
     setError("");
     setUserToEdit(user);
     setFormData({
@@ -156,22 +165,30 @@ export const AdminUsersPage = () => {
         header: "Acciones",
         cell: ({ row }) => (
           <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() => handleOpenEdit(row.original)}
-              className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              Editar
-            </button>
+            {isAdminUser(row.original) ? (
+              <span className="text-xs text-gray-400">
+                Protegido
+              </span>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleOpenEdit(row.original)}
+                  className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  Editar
+                </button>
 
-            <button
-              onClick={() => {
-                setError("");
-                setUserToDelete(row.original);
-              }}
-              className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              Eliminar
-            </button>
+                <button
+                  onClick={() => {
+                    setError("");
+                    setUserToDelete(row.original);
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  Eliminar
+                </button>
+              </>
+            )}
           </div>
         ),
       },
@@ -210,8 +227,7 @@ export const AdminUsersPage = () => {
               <option value="ALL">Todos los roles</option>
               <option value="ADMIN">ADMIN</option>
               <option value="STOCK">STOCK</option>
-              <option value="PEDIDOS">PEDIDOS</option>
-              <option value="CLIENT">CLIENT</option>
+              <option value="PEDIDOS">PEDIDOS</option>              
           </select>
         </div>
         <div className="rounded-2xl border border-gray-100 overflow-hidden shadow-sm bg-white">
