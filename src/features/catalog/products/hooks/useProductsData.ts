@@ -5,6 +5,7 @@ import {
   createProduct,
   deleteProduct,
   getProducts,
+  getUnitMeasures,
   updateProduct,
   updateProductAvailability,
 } from "@/features/catalog/products/api/product.service";
@@ -42,6 +43,12 @@ export const useProductsData = ({
   const ingredientsQuery = useQuery({
     queryKey: ["ingredients"],
     queryFn: getIngredients,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const unitMeasuresQuery = useQuery({
+    queryKey: ["unit-measures"],
+    queryFn: getUnitMeasures,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -108,20 +115,24 @@ export const useProductsData = ({
   const loadError =
     productsQuery.error ??
     categoriesQuery.error ??
-    ingredientsQuery.error;
+    ingredientsQuery.error ??
+    unitMeasuresQuery.error;
 
   return {
     products: productsQuery.data ?? [],
     categories: categoriesQuery.data ?? [],
     ingredients: ingredientsQuery.data ?? [],
+    unitMeasures: unitMeasuresQuery.data ?? [],
     isLoading:
       productsQuery.isLoading ||
       categoriesQuery.isLoading ||
-      ingredientsQuery.isLoading,
+      ingredientsQuery.isLoading ||
+      unitMeasuresQuery.isLoading,
     isError:
       productsQuery.isError ||
       categoriesQuery.isError ||
-      ingredientsQuery.isError,
+      ingredientsQuery.isError ||
+      unitMeasuresQuery.isError,
     errorMessage:
       loadError instanceof Error ? loadError.message : "Error al cargar datos",
     handleCreate,

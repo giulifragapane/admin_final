@@ -1,5 +1,5 @@
 import { useMemo, useState, type SyntheticEvent } from "react";
-import type { IProduct, IProductPayload } from "@/features/catalog/products/types/IProduct";
+import type { IProduct, IProductPayload, IUnitMeasure, } from "@/features/catalog/products/types/IProduct";
 import type { ICategory } from "@/features/catalog/categories/types/ICategorie";
 import type { IIngredient } from "@/features/catalog/ingredients/types/IIngredient";
 
@@ -7,6 +7,7 @@ type Props = {
   productActive: IProduct | null;
   categories: ICategory[];
   ingredients: IIngredient[];
+  unitMeasures: IUnitMeasure[];
   handleCloseModal: VoidFunction;
   handleCreate: (newProduct: IProductPayload) => Promise<void>;
   handleUpdate: (id: string, newProduct: IProductPayload) => Promise<void>;
@@ -16,6 +17,7 @@ export const ProductModal = ({
   productActive,
   categories,
   ingredients,
+  unitMeasures,
   handleCloseModal,
   handleCreate,
   handleUpdate,
@@ -27,6 +29,9 @@ export const ProductModal = ({
   const [available, setAvailable] = useState(productActive?.available ?? true);
   const [submitError, setSubmitError] = useState("");
   const [imageUrl, setImageUrl] = useState(productActive?.images?.[0] ?? "");
+  const [unitMeasureId, setUnitMeasureId] = useState(
+    productActive?.unitMeasureId ?? "",
+  );
 
   const [selectedCategories, setSelectedCategories] = useState<
     { categoria_id: string; es_principal: boolean }[]
@@ -38,11 +43,18 @@ export const ProductModal = ({
   );
 
   const [selectedIngredients, setSelectedIngredients] = useState<
-    { ingrediente_id: string; es_removible: boolean }[]
+    {
+      ingrediente_id: string;
+      es_removible: boolean;
+      cantidad: string;
+      unidad_medida_id: string;
+    }[]
   >(
     productActive?.ingredients.map((item) => ({
       ingrediente_id: item.ingrediente.id,
       es_removible: item.es_removible,
+      cantidad: String(item.cantidad),
+      unidad_medida_id: item.unidad_medida_id ?? "",
     })) ?? [],
   );
 
@@ -91,6 +103,8 @@ export const ProductModal = ({
         {
           ingrediente_id: ingredientId,
           es_removible: false,
+          cantidad: "1",
+          unidad_medida_id: unitMeasures[0]?.id ?? "",
         },
       ];
     });
@@ -101,6 +115,32 @@ export const ProductModal = ({
       prev.map((item) =>
         item.ingrediente_id === ingredientId
           ? { ...item, es_removible: !item.es_removible }
+          : item,
+      ),
+    );
+  };
+
+  const handleIngredientQuantityChange = (
+    ingredientId: string,
+    cantidad: string,
+  ) => {
+    setSelectedIngredients((prev) =>
+      prev.map((item) =>
+        item.ingrediente_id === ingredientId
+          ? { ...item, cantidad }
+          : item,
+      ),
+    );
+  };
+
+  const handleIngredientUnitChange = (
+    ingredientId: string,
+    unidadMedidaId: string,
+  ) => {
+    setSelectedIngredients((prev) =>
+      prev.map((item) =>
+        item.ingrediente_id === ingredientId
+          ? { ...item, unidad_medida_id: unidadMedidaId }
           : item,
       ),
     );
@@ -120,6 +160,27 @@ export const ProductModal = ({
     return;
   }
 
+    if (!unitMeasureId) {
+      setSubmitError("Debe seleccionar una unidad de venta");
+      return;
+    }
+
+    const ingredientesInvalidos = selectedIngredients.some((item) => {
+      const cantidad = Number(item.cantidad);
+      return (
+        Number.isNaN(cantidad) ||
+        cantidad <= 0 ||
+        !item.unidad_medida_id
+      );
+    });
+
+    if (ingredientesInvalidos) {
+      setSubmitError(
+        "Cada ingrediente debe tener una cantidad mayor a 0 y una unidad de medida",
+      );
+      return;
+    }
+
     const productData: IProductPayload = {
       name,
       description,
@@ -128,7 +189,13 @@ export const ProductModal = ({
       stock: Number(stock),
       available,
       categories: selectedCategories,
-      ingredients: selectedIngredients,
+      unitMeasureId,
+      ingredients: selectedIngredients.map((item) => ({
+        ingrediente_id: item.ingrediente_id,
+        es_removible: item.es_removible,
+        cantidad: Number(item.cantidad),
+        unidad_medida_id: item.unidad_medida_id || null,
+      })),
     };
 
     try {
@@ -208,6 +275,24 @@ export const ProductModal = ({
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-600">
+                Unidad de venta
+              </label>
+              <select
+                value={unitMeasureId}
+                onChange={(e) => setUnitMeasureId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Seleccionar unidad</option>
+                {unitMeasures.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.nombre} ({unit.abreviatura})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center gap-2">
@@ -304,33 +389,81 @@ export const ProductModal = ({
                   return (
                     <div
                       key={ingredient.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2"
+                      className="rounded-lg border border-gray-200 px-3 py-2"
                     >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={!!selected}
-                          onChange={() => handleToggleIngredient(ingredient.id)}
-                        />
-                        <span className="text-sm text-gray-700">
-                          {ingredient.name}
-                        </span>
-                        {ingredient.isAllergen && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">
-                            Alérgeno
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={!!selected}
+                            onChange={() => handleToggleIngredient(ingredient.id)}
+                          />
+                          <span className="text-sm text-gray-700">
+                            {ingredient.name}
                           </span>
-                        )}
+                          {ingredient.isAllergen && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">
+                              Alérgeno
+                            </span>
+                          )}
+                        </div>
+
+                        <label className="flex items-center gap-2 text-xs text-gray-600">
+                          <input
+                            type="checkbox"
+                            checked={selected?.es_removible ?? false}
+                            disabled={!selected}
+                            onChange={() => handleToggleRemovable(ingredient.id)}
+                          />
+                          Removible
+                        </label>
                       </div>
 
-                      <label className="flex items-center gap-2 text-xs text-gray-600">
-                        <input
-                          type="checkbox"
-                          checked={selected?.es_removible ?? false}
-                          disabled={!selected}
-                          onChange={() => handleToggleRemovable(ingredient.id)}
-                        />
-                        Removible
-                      </label>
+                      {selected && (
+                        <div className="grid grid-cols-2 gap-3 mt-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">
+                              Cantidad
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={selected.cantidad}
+                              onChange={(e) =>
+                                handleIngredientQuantityChange(
+                                  ingredient.id,
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">
+                              Unidad
+                            </label>
+                            <select
+                              value={selected.unidad_medida_id}
+                              onChange={(e) =>
+                                handleIngredientUnitChange(
+                                  ingredient.id,
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+                            >
+                              <option value="">Seleccionar</option>
+                              {unitMeasures.map((unit) => (
+                                <option key={unit.id} value={unit.id}>
+                                  {unit.nombre} ({unit.abreviatura})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

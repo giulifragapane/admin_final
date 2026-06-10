@@ -56,6 +56,7 @@ export const ProductsPage = () => {
     products,
     categories,
     ingredients,
+    unitMeasures,
     isLoading,
     isError,
     errorMessage,
@@ -216,7 +217,9 @@ export const ProductsPage = () => {
                             }`}
                           >
                             {item.ingrediente.name}
-                            {item.es_removible ? " (removible)" : ""}
+                            {item.cantidad ? ` ${item.cantidad}` : ""}
+                            {item.unidad_medida ? ` ${item.unidad_medida.abreviatura}` : ""}
+                            {item.es_removible ? " (removible)" : ""}                            
                           </span>
                         ))
                       ) : (
@@ -309,6 +312,7 @@ export const ProductsPage = () => {
           productActive={productActive}
           categories={categories}
           ingredients={ingredients}
+          unitMeasures={unitMeasures}
           handleCreate={handleCreate}
           handleUpdate={handleUpdate}
         />

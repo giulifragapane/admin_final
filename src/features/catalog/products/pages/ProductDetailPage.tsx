@@ -63,7 +63,7 @@ export const ProductDetailPage = () => {
               Stock
             </span>
             <span className="text-sm text-gray-700">
-              {product.stock} unidades
+              {product.stock} {product.unitMeasure?.abreviatura ?? "uds."}              
             </span>
           </div>
 
@@ -110,8 +110,10 @@ export const ProductDetailPage = () => {
                   }`}
                 >
                   {item.ingrediente.name}
+                  {item.cantidad ? ` • ${item.cantidad}` : ""}
+                  {item.unidad_medida ? ` ${item.unidad_medida.abreviatura}` : ""}
                   {item.ingrediente.isAllergen ? " • alérgeno" : ""}
-                  {item.es_removible ? " • removible" : ""}
+                  {item.es_removible ? " • removible" : ""}                  
                 </span>
               ))
             ) : (

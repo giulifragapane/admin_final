@@ -1,7 +1,19 @@
 import { api } from "@/shared/api/client";
-import type { IProduct, IProductPayload } from "@/features/catalog/products/types/IProduct";
+import type { IProduct, IProductPayload, IUnitMeasure, } from "@/features/catalog/products/types/IProduct";
 
-const BASE_URL = "/productos";
+const BASE_URL = "/productos/";
+const UNITS_URL = "/productos/unidades-medida/";
+
+type UnitMeasureApi = {
+  id: number;
+  nombre: string;
+  abreviatura: string;
+};
+
+type UnitMeasuresApiResponse = {
+  data: UnitMeasureApi[];
+  total: number;
+};
 
 type ProductApiCategory = {
   categoria: {
@@ -21,7 +33,11 @@ type ProductApiIngredient = {
     nombre: string;
     descripcion: string;
     es_alergeno: boolean;
+    stock_cantidad: number;
   };
+  cantidad: string;
+  unidad_medida_id: number | null;
+  unidad_medida: UnitMeasureApi | null;
   es_removible: boolean;
 };
 
@@ -33,6 +49,8 @@ type ProductApi = {
   imagenes_url: string[];
   stock_cantidad: number;
   disponible: boolean;
+  unidad_venta_id: number | null;
+  unidad_venta: UnitMeasureApi | null;
   categorias: ProductApiCategory[];
   ingredientes: ProductApiIngredient[];
 };
@@ -55,6 +73,14 @@ const mapProductFromApi = (product: ProductApi): IProduct => ({
   images: product.imagenes_url ?? [],
   stock: product.stock_cantidad,
   available: product.disponible,
+  unitMeasureId: product.unidad_venta_id ? String(product.unidad_venta_id) : null,
+  unitMeasure: product.unidad_venta
+    ? {
+        id: String(product.unidad_venta.id),
+        nombre: product.unidad_venta.nombre,
+        abreviatura: product.unidad_venta.abreviatura,
+      }
+    : null,
   categories: (product.categorias ?? []).map((item) => ({
     categoria: {
       id: String(item.categoria.id),
@@ -74,7 +100,17 @@ const mapProductFromApi = (product: ProductApi): IProduct => ({
       name: item.ingrediente.nombre,
       description: item.ingrediente.descripcion,
       isAllergen: item.ingrediente.es_alergeno,
+      stock: item.ingrediente.stock_cantidad ?? 0,
     },
+    cantidad: Number(item.cantidad),
+    unidad_medida_id: item.unidad_medida_id ? String(item.unidad_medida_id) : null,
+    unidad_medida: item.unidad_medida
+      ? {
+          id: String(item.unidad_medida.id),
+          nombre: item.unidad_medida.nombre,
+          abreviatura: item.unidad_medida.abreviatura,
+        }
+      : null,
     es_removible: item.es_removible,
   })),
 });
@@ -86,12 +122,17 @@ const mapProductToApi = (product: IProductPayload) => ({
   imagenes_url: product.images,
   stock_cantidad: product.stock,
   disponible: product.available,
+  unidad_venta_id: product.unitMeasureId ? Number(product.unitMeasureId) : null,
   categorias: product.categories.map((item) => ({
     categoria_id: Number(item.categoria_id),
     es_principal: item.es_principal,
   })),
   ingredientes: product.ingredients.map((item) => ({
     ingrediente_id: Number(item.ingrediente_id),
+    cantidad: item.cantidad,
+    unidad_medida_id: item.unidad_medida_id
+      ? Number(item.unidad_medida_id)
+      : null,
     es_removible: item.es_removible,
   })),
 });
@@ -102,7 +143,7 @@ export const getProducts = async (): Promise<IProduct[]> => {
 };
 
 export const getProductsById = async (id: string): Promise<IProduct> => {
-  const response = await api.get<ProductApi>(`${BASE_URL}/${id}`);
+  const response = await api.get<ProductApi>(`${BASE_URL}${id}`);
   return mapProductFromApi(response.data);
 };
 
@@ -122,7 +163,7 @@ export const updateProduct = async (
   product: IProductPayload,
 ): Promise<IProduct> => {
   const response = await api.patch<ProductApi>(
-    `${BASE_URL}/${id}`,
+    `${BASE_URL}${id}`,
     mapProductToApi(product),
   );
 
@@ -134,7 +175,7 @@ export const updateProductAvailability = async (
   data: ProductAvailabilityPayload,
 ): Promise<IProduct> => {
   const response = await api.patch<ProductApi>(
-    `${BASE_URL}/${id}/disponibilidad`,
+    `${BASE_URL}${id}/disponibilidad`,
     {
       stock_cantidad: data.stock,
       disponible: data.available,
@@ -145,5 +186,15 @@ export const updateProductAvailability = async (
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {
-  await api.delete(`${BASE_URL}/${id}`);
+  await api.delete(`${BASE_URL}${id}`);
+};
+
+export const getUnitMeasures = async (): Promise<IUnitMeasure[]> => {
+  const response = await api.get<UnitMeasuresApiResponse>(UNITS_URL);
+
+  return response.data.data.map((unit) => ({
+    id: String(unit.id),
+    nombre: unit.nombre,
+    abreviatura: unit.abreviatura,
+  }));
 };
