@@ -11,6 +11,7 @@ export interface IOrderDetail {
   id: number;
   producto_id: number;
   cantidad: number;
+  personalizacion: number[];
   producto_nombre: string;
   precio_unitario: string;
   subtotal: string;

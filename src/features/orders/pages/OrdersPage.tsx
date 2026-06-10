@@ -116,10 +116,18 @@ export const OrdersPage = () => {
 
                     <div className="space-y-1 mb-3">
                       {order.detalles.map((detail) => (
-                        <p key={detail.id} className="text-xs text-gray-600">
-                          {detail.cantidad} x {detail.producto_nombre} —{" "}
-                          {formatMoney(detail.subtotal)}
-                        </p>
+                        <div key={detail.id} className="text-xs text-gray-600">
+                          <p>
+                            {detail.cantidad} x {detail.producto_nombre} —{" "}
+                            {formatMoney(detail.subtotal)}
+                          </p>
+
+                          {detail.personalizacion.length > 0 && (
+                            <p className="text-[11px] text-amber-700 mt-0.5">
+                              Personalización: sin ingredientes #{detail.personalizacion.join(", #")}
+                            </p>
+                          )}
+                        </div>
                       ))}
                     </div>
 
