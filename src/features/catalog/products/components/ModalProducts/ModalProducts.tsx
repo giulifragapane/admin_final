@@ -155,11 +155,6 @@ export const ProductModal = ({
     return;
   }
 
-  if (selectedIngredients.length === 0) {
-    setSubmitError("Debe seleccionar al menos un ingrediente");
-    return;
-  }
-
     if (!unitMeasureId) {
       setSubmitError("Debe seleccionar una unidad de venta");
       return;
