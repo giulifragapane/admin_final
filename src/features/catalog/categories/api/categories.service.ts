@@ -1,7 +1,7 @@
 import { api } from "@/shared/api/client";
 import type { ICategory } from "@/features/catalog/categories/types/ICategorie";
 
-const BASE_URL = "/categorias";
+const BASE_URL = "/categorias/";
 
 type CategoryApi = {
   id: string;
@@ -55,7 +55,7 @@ export const updateCategory = async (
   category: Omit<ICategory, "id">,
 ): Promise<ICategory> => {
   const response = await api.patch<CategoryApi>(
-    `${BASE_URL}/${id}`,
+    `${BASE_URL}${id}`,
     mapCategoryToApi(category),
   );
 
@@ -63,5 +63,5 @@ export const updateCategory = async (
 };
 
 export const deleteCategory = async (id: string): Promise<void> => {
-  await api.delete(`${BASE_URL}/${id}`);
+  await api.delete(`${BASE_URL}${id}`);
 };
