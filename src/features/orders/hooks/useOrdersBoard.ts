@@ -5,6 +5,7 @@ import {
   updateOrderStatus,
 } from "@/features/orders/api/orders.service";
 import type { OrderStatus } from "@/features/orders/types/IOrder";
+import { useOrdersRealtime } from "./useOrdersRealtime";
 
 type UseOrdersBoardOptions = {
   setErrorByOrder: Dispatch<SetStateAction<Record<number, string>>>;
@@ -12,6 +13,8 @@ type UseOrdersBoardOptions = {
 
 export const useOrdersBoard = ({ setErrorByOrder }: UseOrdersBoardOptions) => {
   const queryClient = useQueryClient();
+
+  useOrdersRealtime();
 
   const ordersQuery = useQuery({
     queryKey: ["orders"],
