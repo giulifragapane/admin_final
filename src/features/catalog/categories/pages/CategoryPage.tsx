@@ -109,11 +109,17 @@ export const CategoryPage = () => {
                   className="hover:bg-blue-50/40 transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <img
-                      src={category.imageUrl ?? undefined}
-                      alt=""
-                      className="w-10 h-10 object-cover rounded"
-                    />
+                    {category.imageUrl ? (
+                      <img
+                        src={category.imageUrl}
+                        alt={category.name}
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                        —
+                      </div>
+                    )}
                   </td>
 
                   <td className="px-4 py-3">

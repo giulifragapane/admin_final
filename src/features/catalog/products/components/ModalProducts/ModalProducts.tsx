@@ -1,7 +1,8 @@
-import { useMemo, useState, type SyntheticEvent } from "react";
-import type { IProduct, IProductPayload, IUnitMeasure, } from "@/features/catalog/products/types/IProduct";
+import { useMemo, useState, type ChangeEvent, type SyntheticEvent } from "react";
+import type { IProduct, IProductPayload, IUnitMeasure } from "@/features/catalog/products/types/IProduct";
 import type { ICategory } from "@/features/catalog/categories/types/ICategorie";
 import type { IIngredient } from "@/features/catalog/ingredients/types/IIngredient";
+import { uploadImage } from "@/features/uploads/api/upload.service";
 
 type Props = {
   productActive: IProduct | null;
@@ -29,6 +30,7 @@ export const ProductModal = ({
   const [available, setAvailable] = useState(productActive?.available ?? true);
   const [submitError, setSubmitError] = useState("");
   const [imageUrl, setImageUrl] = useState(productActive?.images?.[0] ?? "");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [unitMeasureId, setUnitMeasureId] = useState(
     productActive?.unitMeasureId ?? "",
   );
@@ -61,6 +63,27 @@ export const ProductModal = ({
   const selectedMainCategoryId = useMemo(() => {
     return selectedCategories.find((item) => item.es_principal)?.categoria_id ?? "";
   }, [selectedCategories]);
+
+  const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setSubmitError("");
+    setIsUploadingImage(true);
+
+    try {
+      const uploadedImage = await uploadImage(file);
+      setImageUrl(uploadedImage.url);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "No se pudo subir la imagen",
+      );
+    } finally {
+      setIsUploadingImage(false);
+      event.target.value = "";
+    }
+  };
 
   const handleToggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) => {
@@ -150,10 +173,10 @@ export const ProductModal = ({
     e.preventDefault();
     setSubmitError("");
 
-  if (selectedCategories.length === 0) {
-    setSubmitError("Debe seleccionar al menos una categoría");
-    return;
-  }
+    if (selectedCategories.length === 0) {
+      setSubmitError("Debe seleccionar al menos una categoría");
+      return;
+    }
 
     if (!unitMeasureId) {
       setSubmitError("Debe seleccionar una unidad de venta");
@@ -316,17 +339,48 @@ export const ProductModal = ({
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-600">
-                URL de imagen
-              </label>
-              <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-              />
+            <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  Imagen del producto
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Podés subir una imagen a Cloudinary o pegar una URL manualmente.
+                </p>
+              </div>
+
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt="Vista previa del producto"
+                  className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                />
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                />
+
+                <label className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isUploadingImage
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                }`}>
+                  {isUploadingImage ? "Subiendo..." : "Subir imagen"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadImage}
+                    disabled={isUploadingImage}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
             <div>
@@ -477,7 +531,8 @@ export const ProductModal = ({
           <button
             type="submit"
             form="product-form"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isUploadingImage}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {productActive ? "Guardar cambios" : "Crear producto"}
           </button>

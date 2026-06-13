@@ -1,6 +1,7 @@
-import { useState, type SyntheticEvent } from "react";
+import { useState, type ChangeEvent, type SyntheticEvent } from "react";
 import type { ICategory } from "@/features/catalog/categories/types/ICategorie";
 import { useForm } from "@/shared/hooks/useForm";
+import { uploadImage } from "@/features/uploads/api/upload.service";
 
 type IColor = {
   label: string;
@@ -39,19 +40,44 @@ export const CategoryModal = ({
     colorOptions[0];
   const [tagColor, setTagColor] = useState<IColor>(initialColor);
   const [error, setError] = useState("");
-  const [parentId, setParentId] = useState<string>(categoryActive?.parentId ?? "",);
+  const [parentId, setParentId] = useState<string>(
+    categoryActive?.parentId ?? "",
+  );
   const [imageUrl, setImageUrl] = useState(categoryActive?.imageUrl ?? "");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { formState, handleChange } = useForm<CategoryFormState>({
     name: categoryActive?.name ?? "",
     description: categoryActive?.description ?? "",
   });
 
+  const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setError("");
+    setIsUploadingImage(true);
+
+    try {
+      const uploadedImage = await uploadImage(file);
+      setImageUrl(uploadedImage.url);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "No se pudo subir la imagen",
+      );
+    } finally {
+      setIsUploadingImage(false);
+      event.target.value = "";
+    }
+  };
+
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
-    // Validaciones
     if (!formState.name.trim()) {
       setError("El nombre es obligatorio");
       return;
@@ -76,19 +102,18 @@ export const CategoryModal = ({
       }
 
       handleCloseModal();
-  } catch (err) {
+    } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "No se pudo crear la categoría"
+          : "No se pudo guardar la categoría",
       );
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
+      <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
             {categoryActive ? "Editar categoría" : "Nueva categoría"}
@@ -101,17 +126,14 @@ export const CategoryModal = ({
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} id="category-form">
+        <form onSubmit={handleSubmit} id="category-form" className="overflow-y-auto">
           <div className="px-6 py-5 space-y-5">
-            {/* Error */}
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
 
-            {/* Nombre */}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-600">
                 Nombre
@@ -126,7 +148,6 @@ export const CategoryModal = ({
               />
             </div>
 
-            {/* Descripción */}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-600">
                 Descripción
@@ -141,11 +162,24 @@ export const CategoryModal = ({
               />
             </div>
 
-            {/* URL de imagen */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-600">
-                URL de imagen
-              </label>
+            <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  Imagen de categoría
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Podés subir una imagen a Cloudinary o pegar una URL manualmente.
+                </p>
+              </div>
+
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt="Vista previa de categoría"
+                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                />
+              )}
+
               <input
                 type="text"
                 value={imageUrl}
@@ -153,9 +187,23 @@ export const CategoryModal = ({
                 placeholder="https://..."
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
               />
+
+              <label className={`inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                isUploadingImage
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+              }`}>
+                {isUploadingImage ? "Subiendo..." : "Subir imagen"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUploadImage}
+                  disabled={isUploadingImage}
+                  className="hidden"
+                />
+              </label>
             </div>
 
-            {/* Categoría padre */}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-600">
                 Categoría padre
@@ -182,7 +230,6 @@ export const CategoryModal = ({
               </p>
             </div>
 
-            {/* Color */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-600">
                 Color de etiqueta
@@ -216,7 +263,6 @@ export const CategoryModal = ({
           </div>
         </form>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
           <button
             className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
@@ -227,7 +273,8 @@ export const CategoryModal = ({
           <button
             type="submit"
             form="category-form"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isUploadingImage}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {categoryActive ? "Guardar cambios" : "Crear categoría"}
           </button>
