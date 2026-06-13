@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/shared/routes/ProtectedRoute";
 import { OrdersPage } from "@/features/orders/pages/OrdersPage";
 import { AdminUsersPage } from "@/features/admin-users/pages/AdminUsersPage";
 import { UserPage } from "@/features/profile/pages/UserPage";
+import { StatisticsDashboardPage } from "@/features/statistics/pages/StatisticsDashboardPage";
 
 export const AppRouter = () => {
   return (
@@ -23,6 +24,16 @@ export const AppRouter = () => {
             <main>
               <Routes>
                 <Route path="/" element={<ProductsPage />} />
+
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <StatisticsDashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+
                 <Route path="/products/:id" element={<ProductDetailPage />} />
                 <Route path="/categories" element={<CategoryPage />} />
                 <Route path="/ingredients" element={<IngredientsPage />} />
