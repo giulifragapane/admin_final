@@ -17,11 +17,13 @@ export const NavBar = () => {
 
   const canViewOrders = hasRole(["ADMIN", "PEDIDOS"]);
   const canViewUsers = hasRole(["ADMIN"]);
+  const canViewStatistics = hasRole(["ADMIN"]);
 
   const navLinks = [
     ...baseNavLinks,
     ...(canViewOrders ? [{ label: "Pedidos", href: "/orders" }] : []),
     ...(canViewUsers ? [{ label: "Usuarios", href: "/users" }] : []),
+    ...(canViewStatistics ? [{ label: "Estadísticas", href: "/dashboard" }] : []),
   ];
 
   const handleLogout = async () => {
