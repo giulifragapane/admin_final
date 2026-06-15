@@ -21,7 +21,7 @@ const getWebSocketUrl = () => {
     return explicitWsUrl;
   }
 
-  const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
   const wsBaseUrl = apiUrl.replace(/^http/, "ws").replace(/\/$/, "");
 
   return `${wsBaseUrl}/api/v1/ws/pedidos`;
