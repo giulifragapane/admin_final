@@ -2,7 +2,7 @@ import { useMemo, useState, type ChangeEvent, type SyntheticEvent } from "react"
 import type { IProduct, IProductPayload, IUnitMeasure } from "@/features/catalog/products/types/IProduct";
 import type { ICategory } from "@/features/catalog/categories/types/ICategorie";
 import type { IIngredient } from "@/features/catalog/ingredients/types/IIngredient";
-import { uploadImage } from "@/features/uploads/api/upload.service";
+import { deleteImageFromUrl, uploadImage } from "@/features/uploads/api/upload.service";
 
 type Props = {
   productActive: IProduct | null;
@@ -31,6 +31,7 @@ export const ProductModal = ({
   const [submitError, setSubmitError] = useState("");
   const [imageUrl, setImageUrl] = useState(productActive?.images?.[0] ?? "");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDeletingImage, setIsDeletingImage] = useState(false);
   const [unitMeasureId, setUnitMeasureId] = useState(
     productActive?.unitMeasureId ?? "",
   );
@@ -82,6 +83,26 @@ export const ProductModal = ({
     } finally {
       setIsUploadingImage(false);
       event.target.value = "";
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!imageUrl) return;
+
+    setSubmitError("");
+    setIsDeletingImage(true);
+
+    try {
+      await deleteImageFromUrl(imageUrl);
+      setImageUrl("");
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo eliminar la imagen de Cloudinary",
+      );
+    } finally {
+      setIsDeletingImage(false);
     }
   };
 
@@ -350,11 +371,22 @@ export const ProductModal = ({
               </div>
 
               {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt="Vista previa del producto"
-                  className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                />
+                <div className="space-y-2">
+                  <img
+                    src={imageUrl}
+                    alt="Vista previa del producto"
+                    className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteImage}
+                    disabled={isDeletingImage || isUploadingImage}
+                    className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isDeletingImage ? "Eliminando..." : "Eliminar imagen"}
+                  </button>
+                </div>
               )}
 
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -376,7 +408,7 @@ export const ProductModal = ({
                     type="file"
                     accept="image/*"
                     onChange={handleUploadImage}
-                    disabled={isUploadingImage}
+                    disabled={isUploadingImage || isDeletingImage}
                     className="hidden"
                   />
                 </label>
@@ -531,7 +563,7 @@ export const ProductModal = ({
           <button
             type="submit"
             form="product-form"
-            disabled={isUploadingImage}
+            disabled={isUploadingImage || isDeletingImage}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {productActive ? "Guardar cambios" : "Crear producto"}

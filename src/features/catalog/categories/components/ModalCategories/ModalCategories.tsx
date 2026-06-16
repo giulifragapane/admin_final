@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type SyntheticEvent } from "react";
 import type { ICategory } from "@/features/catalog/categories/types/ICategorie";
 import { useForm } from "@/shared/hooks/useForm";
-import { uploadImage } from "@/features/uploads/api/upload.service";
+import { deleteImageFromUrl, uploadImage } from "@/features/uploads/api/upload.service";
 
 type IColor = {
   label: string;
@@ -45,6 +45,7 @@ export const CategoryModal = ({
   );
   const [imageUrl, setImageUrl] = useState(categoryActive?.imageUrl ?? "");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDeletingImage, setIsDeletingImage] = useState(false);
 
   const { formState, handleChange } = useForm<CategoryFormState>({
     name: categoryActive?.name ?? "",
@@ -71,6 +72,26 @@ export const CategoryModal = ({
     } finally {
       setIsUploadingImage(false);
       event.target.value = "";
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!imageUrl) return;
+
+    setError("");
+    setIsDeletingImage(true);
+
+    try {
+      await deleteImageFromUrl(imageUrl);
+      setImageUrl("");
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar la imagen de Cloudinary",
+      );
+    } finally {
+      setIsDeletingImage(false);
     }
   };
 
@@ -173,11 +194,22 @@ export const CategoryModal = ({
               </div>
 
               {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt="Vista previa de categoría"
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                />
+                <div className="space-y-2">
+                  <img
+                    src={imageUrl}
+                    alt="Vista previa de categoría"
+                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteImage}
+                    disabled={isDeletingImage || isUploadingImage}
+                    className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isDeletingImage ? "Eliminando..." : "Eliminar imagen"}
+                  </button>
+                </div>
               )}
 
               <input
@@ -198,7 +230,7 @@ export const CategoryModal = ({
                   type="file"
                   accept="image/*"
                   onChange={handleUploadImage}
-                  disabled={isUploadingImage}
+                  disabled={isUploadingImage || isDeletingImage}
                   className="hidden"
                 />
               </label>
@@ -273,7 +305,7 @@ export const CategoryModal = ({
           <button
             type="submit"
             form="category-form"
-            disabled={isUploadingImage}
+            disabled={isUploadingImage || isDeletingImage}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {categoryActive ? "Guardar cambios" : "Crear categoría"}
